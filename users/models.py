@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.utils import timezone
 
-#  Roles disponibles
 ROLES = (
     ('administrador', 'Administrador'),
     ('docente', 'Docente'),
@@ -10,28 +9,49 @@ ROLES = (
     ('coordinador', 'Coordinador Académico'),
 )
 
-#  administrador de usuarios personalizado
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError("El correo es obligatorio")
+
         email = self.normalize_email(email)
+        extra_fields.setdefault('is_active', True)
+
         user = self.model(email=email, **extra_fields)
+
+        if not password:
+            raise ValueError("El usuario debe tener contraseña")
+
         user.set_password(password)
-        user.save()
+        user.save(using=self._db)
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
-        extra_fields.setdefault("is_staff", True)
-        extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
+
+        if extra_fields.get("is_staff") is not True:
+            raise ValueError("El superusuario debe tener is_staff=True")
+
+        if extra_fields.get("is_superuser") is not True:
+            raise ValueError("El superusuario debe tener is_superuser=True")
+
         return self.create_user(email, password, **extra_fields)
 
-#  Modelo de Usuario
 class CustomUser(AbstractBaseUser, PermissionsMixin):
-    nombre = models.CharField(max_length=50)
-    apellido = models.CharField(max_length=50)
+
+    class Meta:
+        permissions = [
+            ("usuarios_crear_usuario", "Puede crear usuarios"),
+            ("usuarios_editar_usuario", "Puede editar usuarios"),
+            ("roles_editar_rol", "Puede editar roles y permisos"),
+        ]
+        
+    nombre = models.CharField(max_length=50, blank=True)
+    apellido = models.CharField(max_length=50, blank=True)
     email = models.EmailField(unique=True)
-    rol = models.CharField(max_length=30, choices=ROLES)
+    rol = models.CharField(max_length=30, choices=ROLES, blank=True)
     estado = models.BooleanField(default=True)
     fecha_creacion = models.DateTimeField(default=timezone.now)
 
@@ -41,7 +61,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['nombre', 'apellido', 'rol']
+    REQUIRED_FIELDS = []  # *** CORRECCIÓN CRÍTICA ***
 
     def __str__(self):
-        return f"{self.nombre} {self.apellido} ({self.rol})"
+        return f"{self.email}"
+    
+    
