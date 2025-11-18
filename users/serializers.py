@@ -4,7 +4,7 @@ from django.core.validators import RegexValidator
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth import get_user_model
 import re
-
+from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
 
 #---------------------------------------------------------------------------------
 #registro de nuevo usuario  
@@ -84,3 +84,29 @@ class CambioContraseñaSerializer(serializers.Serializer):
 #----------------------------------------------------------------------------------------
 #recuperacion de contraseña
 
+Usuario = get_user_model()
+
+class SolicitarRecuperacionSerializer(serializers.Serializer):
+    correo = serializers.EmailField()
+
+class ValidarTokenSerializer(serializers.Serializer):
+    token = serializers.CharField()
+
+class RestablecerContraseñaSerializer(serializers.Serializer):
+    token = serializers.CharField()
+    nueva_contraseña = serializers.CharField(write_only=True)
+
+    def validate_nueva_contraseña(self, value):
+        if len(value) < 8:
+            raise serializers.ValidationError("La contraseña debe tener mínimo 8 caracteres.")
+
+        if not re.search(r"[A-Z]", value):
+            raise serializers.ValidationError("Debe contener al menos una letra mayúscula.")
+
+        if not re.search(r"\d", value):
+            raise serializers.ValidationError("Debe contener al menos un número.")
+
+        if not re.search(r"[!@#$%^&*()_\-\+=\[\]{};:'\",.<>/?]", value):
+            raise serializers.ValidationError("Debe contener al menos un carácter especial.")
+
+        return value

@@ -11,3 +11,4 @@ urlpatterns = [
     # (Opcional) rutas de autenticación
     path('api/auth/', include('rest_framework.urls')),
 ]
+
