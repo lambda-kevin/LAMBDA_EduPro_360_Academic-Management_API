@@ -1,75 +1,105 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from django.contrib.auth.models import Group, Permission
+from django import forms
+from django.contrib.auth.forms import ReadOnlyPasswordHashField
+from django.utils.translation import gettext_lazy as _
 from .models import CustomUser
 
-# Desregistramos el grupo para personalizar su visualización
-admin.site.unregister(Group)
+# Si tienes un modelo Role en tu app, se intentará registrarlo más abajo
+try:
+    from .models import Role
+except Exception:
+    Role = None
 
-@admin.register(CustomUser)
+
+# ----------------------------
+# Formularios personalizados
+# ----------------------------
+
+class FormularioCreacionUsuario(forms.ModelForm):
+    """
+    Formulario para crear usuarios en el admin.
+    Muestra password en dos campos y guarda el hash con set_password.
+    """
+    password1 = forms.CharField(label="Contraseña", widget=forms.PasswordInput)
+    password2 = forms.CharField(label="Confirmar contraseña", widget=forms.PasswordInput)
+
+    class Meta:
+        model = CustomUser
+        fields = ("correo", "nombre", "apellido", "rol", "estado")
+
+    def clean_password2(self):
+        p1 = self.cleaned_data.get("password1")
+        p2 = self.cleaned_data.get("password2")
+        if p1 and p2 and p1 != p2:
+            raise forms.ValidationError("Las contraseñas no coinciden.")
+        return p2
+
+    def save(self, commit=True):
+        usuario = super().save(commit=False)
+        usuario.set_password(self.cleaned_data["password1"])
+        if commit:
+            usuario.save()
+        return usuario
+
+
+class FormularioCambioUsuario(forms.ModelForm):
+    """
+    Formulario para actualizar usuarios en el admin.
+    Muestra la contraseña como campo de sólo lectura (hash).
+    """
+    password = ReadOnlyPasswordHashField(label=_("Contraseña"),
+        help_text=_("Las contraseñas no se muestran. Usa 'change password' para cambiarla."))
+
+    class Meta:
+        model = CustomUser
+        fields = ("correo", "nombre", "apellido", "password", "rol", "estado", "is_active", "is_staff", "is_superuser")
+
+    def clean_password(self):
+        # Devuelve el valor original, no el proporcionado por el form
+        return self.initial["password"]
+
+
+# ----------------------------
+# Admin personalizado
+# ----------------------------
+
 class CustomUserAdmin(BaseUserAdmin):
-    """
-    Admin personalizado para CustomUser.
-    Permite:
-    - Gestión completa de usuarios
-    - Asignación de roles/grupos y permisos específicos
-    """
-    model = CustomUser
+    form = FormularioCambioUsuario
+    add_form = FormularioCreacionUsuario
 
-    # Qué se muestra en la lista de usuarios
-    list_display = ('email', 'nombre', 'apellido', 'rol', 'is_staff', 'is_active')
-    list_filter = ('rol', 'is_staff', 'is_active', 'groups')
+    # Campos mostrados en la lista
+    list_display = ("correo", "nombre", "apellido", "rol", "estado", "is_staff", "is_superuser", "fecha_creacion")
+    list_filter = ("is_staff", "is_superuser", "estado", "rol")
 
-    # Campos al editar un usuario
+    # Organización de campos en la vista detalle
     fieldsets = (
-        (None, {'fields': ('email', 'password')}),
-        ('Información personal', {'fields': ('nombre', 'apellido', 'rol', 'estado')}),
-        ('Permisos', {
-            'fields': (
-                'is_active',
-                'is_staff',
-                'is_superuser',
-                'groups',          # Permite asignar roles/grupos
-                'user_permissions' # Permite asignar permisos individuales
-            ),
-        }),
-        ('Fechas', {'fields': ('fecha_creacion',)}),
+        (None, {"fields": ("correo", "password")}),
+        ("Información personal", {"fields": ("nombre", "apellido", "rol")}),
+        ("Permisos", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
+        ("Metadatos", {"fields": ("estado", "fecha_creacion")}),
     )
 
-    # Campos al crear un usuario
+    # Campos para crear un usuario desde el admin
     add_fieldsets = (
         (None, {
-            'classes': ('wide',),
-            'fields': (
-                'email', 'nombre', 'apellido', 'rol',
-                'password1', 'password2',
-                'is_active', 'is_staff'
-            ),
+            "classes": ("wide",),
+            "fields": ("correo", "nombre", "apellido", "rol", "password1", "password2", "estado"),
         }),
     )
 
-    search_fields = ('email', 'nombre', 'apellido')
-    ordering = ('email',)
+    search_fields = ("correo", "nombre", "apellido")
+    ordering = ("correo",)
+    filter_horizontal = ("groups", "user_permissions",)
 
-# Admin para manejar Grupos/roles
-@admin.register(Group)
-class GroupAdmin(admin.ModelAdmin):
-    """
-    Admin para gestionar Grupos/roles.
-    Permite:
-    - Ver permisos asignados a cada grupo
-    - Asignar permisos desde el admin
-    """
-    list_display = ('name',)
-    filter_horizontal = ('permissions',)  # Mejor interfaz para asignar permisos
-    search_fields = ('name',)
 
-# Admin opcional para ver Permisos directamente
-@admin.register(Permission)
-class PermissionAdmin(admin.ModelAdmin):
-    """
-    Admin para ver permisos del sistema.
-    Normalmente no se modifican directamente, pero útil para depuración.
-    """
-    list_display = ('name', 'codename', 'content_type')
-    search_fields = ('name', 'codename')
+# Registrar el CustomUser en el admin
+admin.site.register(CustomUser, CustomUserAdmin)
+
+
+# Registrar Role si existe
+if Role is not None:
+    try:
+        admin.site.register(Role)
+    except admin.sites.AlreadyRegistered:
+        pass
