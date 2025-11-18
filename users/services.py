@@ -1,5 +1,7 @@
 from django.core.mail import send_mail
 
+#envia los correos de creacion de usuario
+
 def enviar_correo_bienvenida(correo_destino, nombre_usuario):
     asunto = "Bienvenido al Sistema Académico"
     mensaje = f"Hola {nombre_usuario}, tu cuenta ha sido creada exitosamente."

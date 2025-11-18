@@ -1,5 +1,8 @@
 from django.contrib.auth.models import BaseUserManager
 
+
+#-------------------------------------------------------------------------------
+#creacion del usuario y validaciones 
 class CustomUserManager(BaseUserManager):
     def create_user(self, correo, password=None, **extra_fields):
         if not correo:

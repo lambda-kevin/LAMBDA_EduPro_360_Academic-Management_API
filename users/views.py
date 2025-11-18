@@ -7,7 +7,14 @@ from .serializers import LoginSerializer
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
+from rest_framework.permissions import IsAuthenticated
+from django.core.mail import send_mail
+from django.conf import settings
 
+from .serializers import CambioContraseñaSerializer
+
+#______________________________________________________________________
+#registro de usuarios con sus roles
 class RegistroUsuarioView(APIView):
 
     def post(self, request):
@@ -27,7 +34,7 @@ class RegistroUsuarioView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 #--------------------------------------------------------------------------------
-
+#inicio de sesion 
 
 class LoginView(APIView):
     permission_classes = (AllowAny,)
@@ -75,4 +82,44 @@ class LoginView(APIView):
         }
 
         return Response(respuesta, status=status.HTTP_200_OK)
+#-----------------------------------------------------------------------
+#cambio de contraseña
+
+
+class CambioContraseñaView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = CambioContraseñaSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        contraseña_actual = serializer.validated_data["contraseña_actual"]
+        nueva_contraseña = serializer.validated_data["nueva_contraseña"]
+
+        usuario = request.user
+
+        # Validar contraseña actual
+        if not usuario.check_password(contraseña_actual):
+            return Response(
+                {"error": "La contraseña actual es incorrecta."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Guardar nueva contraseña
+        usuario.set_password(nueva_contraseña)
+        usuario.save()
+
+     # Enviar correo de confirmación
+        send_mail(
+            subject="Cambio de contraseña exitoso",
+            message="Tu contraseña ha sido actualizada correctamente.",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[usuario.correo],
+            fail_silently=False,
+        )
+
+        return Response({"mensaje": "Contraseña actualizada correctamente."}, status=200)
+#--------------------------------------------------------------------------------------------
+#recuperacion de contraseña
+
 

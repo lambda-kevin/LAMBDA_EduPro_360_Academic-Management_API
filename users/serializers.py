@@ -3,7 +3,11 @@ from .models import CustomUser
 from django.core.validators import RegexValidator
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth import get_user_model
+import re
 
+
+#---------------------------------------------------------------------------------
+#registro de nuevo usuario  
 class RegistroUsuarioSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         write_only=True,
@@ -63,3 +67,20 @@ class LoginSerializer(serializers.Serializer):
         # OK: inyectar usuario validado
         data["usuario"] = usuario
         return data
+#-----------------------------------------------------------------------------------
+#cambio de contraseña
+
+class CambioContraseñaSerializer(serializers.Serializer):
+    contraseña_actual = serializers.CharField(required=True)
+    nueva_contraseña = serializers.CharField(required=True)
+
+    def validar_nueva_contraseña(self, value):
+        patron = r'^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&._-])[A-Za-z\d@$!%*#?&._-]{8,}$'
+        if not re.match(patron, value):
+            raise serializers.ValidationError(
+                "La contraseña debe tener al menos una mayúscula, un número, un carácter especial y mínimo 8 caracteres."
+            )
+        return value
+#----------------------------------------------------------------------------------------
+#recuperacion de contraseña
+

@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.utils import timezone
 from .managers import CustomUserManager
 
+#creacion de tabla con sus colomnas 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     nombre = models.CharField(max_length=100)
     apellido = models.CharField(max_length=100)
