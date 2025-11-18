@@ -12,6 +12,11 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
+from .serializers import (
+    SolicitarRecuperacionSerializer,
+    ValidarTokenSerializer,
+    RestablecerContraseñaSerializer
+)
 
 from .serializers import CambioContraseñaSerializer
 
@@ -123,13 +128,6 @@ class CambioContraseñaView(APIView):
         return Response({"mensaje": "Contraseña actualizada correctamente."}, status=200)
 #--------------------------------------------------------------------------------------------
 #recuperacion de contraseña
-
-
-from .serializers import (
-    SolicitarRecuperacionSerializer,
-    ValidarTokenSerializer,
-    RestablecerContraseñaSerializer
-)
 
 Usuario = get_user_model()
 signer = TimestampSigner()
