@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'drf_spectacular_sidecar',
     'rest_framework',
     'users',
+    'asignaturas',
 ]
 
 MIDDLEWARE = [
@@ -139,6 +140,7 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
+        "api.permissions.TienePermiso"
     ),
 }
 from datetime import timedelta
