@@ -3,13 +3,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django import forms
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 from django.utils.translation import gettext_lazy as _
-from .models import CustomUser
-
-# Si tienes un modelo Role en tu app, se intentará registrarlo más abajo
-try:
-    from .models import Role
-except Exception:
-    Role = None
+from users.models import CustomUser, Rol, Permiso, UsuarioRol
 
 
 # ----------------------------
@@ -17,10 +11,6 @@ except Exception:
 # ----------------------------
 
 class FormularioCreacionUsuario(forms.ModelForm):
-    """
-    Formulario para crear usuarios en el admin.
-    Muestra password en dos campos y guarda el hash con set_password.
-    """
     password1 = forms.CharField(label="Contraseña", widget=forms.PasswordInput)
     password2 = forms.CharField(label="Confirmar contraseña", widget=forms.PasswordInput)
 
@@ -44,62 +34,67 @@ class FormularioCreacionUsuario(forms.ModelForm):
 
 
 class FormularioCambioUsuario(forms.ModelForm):
-    """
-    Formulario para actualizar usuarios en el admin.
-    Muestra la contraseña como campo de sólo lectura (hash).
-    """
-    password = ReadOnlyPasswordHashField(label=_("Contraseña"),
-        help_text=_("Las contraseñas no se muestran. Usa 'change password' para cambiarla."))
+    password = ReadOnlyPasswordHashField(
+        label=_("Contraseña"),
+        help_text=_("Las contraseñas no se muestran. Usa 'change password' para cambiarla.")
+    )
 
     class Meta:
         model = CustomUser
-        fields = ("correo", "nombre", "apellido", "password", "rol", "estado", "is_active", "is_staff", "is_superuser")
+        fields = (
+            "correo", "nombre", "apellido", "password",
+            "rol", "estado", "is_active", "is_staff", "is_superuser"
+        )
 
     def clean_password(self):
-        # Devuelve el valor original, no el proporcionado por el form
         return self.initial["password"]
 
 
 # ----------------------------
-# Admin personalizado
+# Admin para CustomUser
 # ----------------------------
 
+@admin.register(CustomUser)
 class CustomUserAdmin(BaseUserAdmin):
     form = FormularioCambioUsuario
     add_form = FormularioCreacionUsuario
 
-    # Campos mostrados en la lista
-    list_display = ("correo", "nombre", "apellido", "rol", "estado", "is_staff", "is_superuser", "fecha_creacion")
-    list_filter = ("is_staff", "is_superuser", "estado", "rol")
-
-    # Organización de campos en la vista detalle
-    fieldsets = (
-        (None, {"fields": ("correo", "password")}),
-        ("Información personal", {"fields": ("nombre", "apellido", "rol")}),
-        ("Permisos", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
-        ("Metadatos", {"fields": ("estado", "fecha_creacion")}),
+    list_display = (
+        "correo", "nombre", "apellido",
+        "rol", "estado",
+        "is_active", "is_staff", "is_superuser",
+        "fecha_creacion"
     )
 
-    # Campos para crear un usuario desde el admin
+    list_filter = ("estado", "rol", "is_staff", "is_superuser")
+
+    fieldsets = (
+        (None, {"fields": ("correo", "password")}),
+        ("Información Personal", {"fields": ("nombre", "apellido", "rol", "estado")}),
+        ("Permisos", {"fields": (
+            "is_active", "is_staff", "is_superuser",
+            "groups", "user_permissions"
+        )}),
+        ("Metadatos", {"fields": ("fecha_creacion",)}),
+    )
+
     add_fieldsets = (
         (None, {
             "classes": ("wide",),
-            "fields": ("correo", "nombre", "apellido", "rol", "password1", "password2", "estado"),
+            "fields": ("correo", "nombre", "apellido", "rol",
+                       "password1", "password2", "estado"),
         }),
     )
 
     search_fields = ("correo", "nombre", "apellido")
     ordering = ("correo",)
-    filter_horizontal = ("groups", "user_permissions",)
+    filter_horizontal = ("groups", "user_permissions")
 
 
-# Registrar el CustomUser en el admin
-admin.site.register(CustomUser, CustomUserAdmin)
+# ----------------------------
+# Registrar Roles y Permisos
+# ----------------------------
 
-
-# Registrar Role si existe
-if Role is not None:
-    try:
-        admin.site.register(Role)
-    except admin.sites.AlreadyRegistered:
-        pass
+admin.site.register(Rol)
+admin.site.register(Permiso)
+admin.site.register(UsuarioRol)
