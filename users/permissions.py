@@ -30,3 +30,7 @@ class TienePermiso(BasePermission):
 
         # 4. Validar si el usuario posee el permiso solicitado
         return permiso_requerido in permisos_usuario
+    
+
+    
+
