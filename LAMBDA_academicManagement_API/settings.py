@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'tareas',
     'entrega_tareas',
     'calificaciones',
+    'consultar_notas',
 ]
 
 MIDDLEWARE = [

@@ -11,6 +11,7 @@ urlpatterns = [
     path('api/tareas/', include('tareas.urls')),   
     path('api/entregas/', include('entrega_tareas.urls')),
     path('api/calificaciones/', include('calificaciones.urls')),
+    path("api/calificaciones/", include("consultar_notas.urls")),
 
 
 
