@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'users',
     'asignaturas',
     'tareas',
+    'entrega_tareas',
+    'calificaciones',
 ]
 
 MIDDLEWARE = [
