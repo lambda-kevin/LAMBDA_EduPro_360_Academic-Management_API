@@ -24,6 +24,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
             ("ver_permisos", "Puede ver permisos"),
             ("asignar_permisos", "Puede asignar permisos"),
             ("crear_permisos", "Puede crear nuevos permisos"),
+            ("enviar_recordatorios", "Puede enviar recordatorios de tareas"),
         ]
     #__________________________________________________________________
     nombre = models.CharField(max_length=100)
