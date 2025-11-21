@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-
+from users.permissions import TienePermiso
 from users.models import Rol, Permiso, UsuarioRol, CustomUser
 
 from users.serializers import (
@@ -16,13 +16,16 @@ from users.serializers import (
 #        PERMISOS
 # ================================
 class CrearPermisoView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, TienePermiso]
+    permiso_requerido = "crear_permisos"  # nombre del permiso que debe tener el rol
 
     def post(self, request):
         serializer = PermisoSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=201)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"mensaje": "Permiso creado correctamente"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 
 
 class ListaPermisosView(APIView):

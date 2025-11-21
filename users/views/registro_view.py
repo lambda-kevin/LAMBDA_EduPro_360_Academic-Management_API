@@ -4,11 +4,14 @@ from rest_framework import status
 from ..serializers import RegistroUsuarioSerializer
 from ..services import enviar_correo_bienvenida
 
+from rest_framework.permissions import IsAdminUser
+
 
 
 #______________________________________________________________________
 #registro de usuarios con sus roles
 class RegistroUsuarioView(APIView):
+    permission_classes = [IsAdminUser]
 
     def post(self, request):
         serializer = RegistroUsuarioSerializer(data=request.data)

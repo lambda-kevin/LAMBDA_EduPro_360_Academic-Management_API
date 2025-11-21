@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'calificaciones',
     'consultar_notas',
     'recordatorios',
+    'desempeño_academico',
 ]
 
 MIDDLEWARE = [
@@ -215,4 +216,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "notificaciones.tasks.enviar_recordatorios_tareas",
         "schedule": crontab(hour=7, minute=0),  # TODOS LOS DÍAS A LAS 7 AM
     },
+    "generar_reporte_mensual": {
+        "task": "desempeño_academico.tasks.generar_reporte_mensual",
+        # Primer día de cada mes a las 00:05 (ajusta hora según zona)
+        "schedule": crontab(minute=5, hour=0, day_of_month="1"),
+    },
 }
+
+
