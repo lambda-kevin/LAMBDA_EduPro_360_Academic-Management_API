@@ -24,6 +24,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
             ("ver_permisos", "Puede ver permisos"),
             ("asignar_permisos", "Puede asignar permisos"),
             ("crear_permisos", "Puede crear nuevos permisos"),
+            ("enviar_recordatorios", "Puede enviar recordatorios de tareas"),
         ]
     #__________________________________________________________________
     nombre = models.CharField(max_length=100)
@@ -58,6 +59,7 @@ class Permiso(models.Model):
 
 class Rol(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
+    descripcion = models.TextField(blank=True)
     permisos = models.ManyToManyField(Permiso, related_name="roles", blank=True)
 
     def __str__(self):

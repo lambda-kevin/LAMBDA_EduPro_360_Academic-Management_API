@@ -31,16 +31,23 @@ class RegistroUsuarioSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         password = validated_data.pop("password")
-        rol = validated_data.get("rol")
-
-        # Crear usuario
+        rol_string = validated_data.get("rol")   # rol viene como string
+       
+        # Crear usuario normalmente
         usuario = CustomUser.objects.create_user(password=password, **validated_data)
 
-        # ⬅ Rol automático en tabla intermedia
-        if rol:
-            UsuarioRol.objects.create(usuario=usuario, rol=rol)
+        # Si el usuario envió un rol (como string), intentamos convertirlo a Rol
+        if rol_string:
+            try:
+                # Buscar un rol en la tabla Rol
+                rol_instance = Rol.objects.get(nombre__iexact=rol_string)
+                UsuarioRol.objects.create(usuario=usuario, rol=rol_instance)
+            except Rol.DoesNotExist:
+                # El usuario se creó, pero no se pudo asociar el rol
+                raise serializers.ValidationError({"rol": "El rol indicado no existe en el sistema."})
 
         return usuario
+
 
 
 # =====================================================================================
