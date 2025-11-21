@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     'tareas',
     'entrega_tareas',
     'calificaciones',
+    'consultar_notas',
+    'recordatorios',
 ]
 
 MIDDLEWARE = [
@@ -188,3 +190,29 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_FROM_EMAIL = "no-reply@miapp.com"
+# celery
+# =========================
+# CELERY CONFIG
+# =========================
+
+CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
+CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/0"
+
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+
+# Ejecutar tareas fallidas nuevamente
+CELERY_ACKS_LATE = True
+
+# Para retry automático
+CELERY_TASK_RETRY_DELAY = 60
+
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    "enviar-recordatorios-diarios": {
+        "task": "notificaciones.tasks.enviar_recordatorios_tareas",
+        "schedule": crontab(hour=7, minute=0),  # TODOS LOS DÍAS A LAS 7 AM
+    },
+}
